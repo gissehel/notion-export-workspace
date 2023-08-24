@@ -190,6 +190,9 @@ const retrieve_pages = async (context, on_result) => {
 const file_container_names = [
     'file',
     'image',
+    'video',
+    'audio',
+    'pdf',
 ]
 
 /**
