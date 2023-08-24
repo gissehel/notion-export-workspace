@@ -1,8 +1,28 @@
 /**
  * @typedef {import('./context').Context} Context
+ * @typedef {import('./context').ContextRead} ContextRead
  */
 const fs = require('fs/promises');
 const fsorig = require('fs');
+
+/**
+ * Check if a file exists
+ * 
+ * @param {String} path The path to check
+ * @returns {Promise<Boolean>} A promise that resolves to true if the file exists, false otherwise
+ */
+const file_exists = async (path) => {
+    try {
+        await fs.access(path)
+        return true
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            return false
+        } else {
+            throw err
+        }
+    }
+}
 
 /**
  * create a directory
@@ -100,9 +120,46 @@ const write_json = async (context, subpath, filename, data) => {
     await write_file(context, subpath, filename, JSON.stringify(data, null, 4));
 }
 
+/**
+ * Read a JSON structure from a file
+ * 
+ * @param {ContextRead} context The context object
+ * @param {String} subpath The subpath to read from
+ * @param {String} filename The filename to read from
+ * @returns {Promise<Object>} A promise that resolves to the JSON structure
+ */
+const read_json = async (context, subpath, filename) => {
+    const { base_path } = context.static;
+    const dir = subpath ? `${base_path}/${subpath}` : base_path
+    const path = `${dir}/${filename}`
+    if (!(await file_exists(path))) {
+        return null
+    }
+    const data = await fs.readFile(path, 'utf8')
+    return JSON.parse(data)
+}
+
+/**
+ * List JSON files in a directory
+ * 
+ * @param {ContextRead} context The context object
+ * @param {String} subpath The subpath to read from
+ * @returns {Promise<String[]>} A promise that resolves to the JSON files in the directory
+ */
+const ls_json = async (context, subpath) => {
+    const { base_path } = context.static;
+    const dir = subpath ? `${base_path}/${subpath}` : base_path
+    const files = await fs.readdir(dir)
+    const json_files = files.filter((file) => file.endsWith('.json'))
+    return json_files
+}
+
+
 exports.create_dir = create_dir
 exports.write_file = write_file
 exports.append_file = append_file
 exports.write_action = write_action
 exports.write_json = write_json
+exports.read_json = read_json
 exports.create_write_stream = create_write_stream
+exports.ls_json = ls_json

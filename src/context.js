@@ -23,6 +23,16 @@ const { get_time_id } = require('./utils.js');
  */
 
 /**
+ * @typedef {Object} ContextReadStatic
+ * @property {String} base_path The path to the data directory
+ */
+
+/**
+ * @typedef {Object} ContextRead
+ * @property {ContextReadStatic} static The static context
+ */
+
+/**
  * Get the default base path for the data directory
  * 
  * @returns {String} The default base path for the data directory
@@ -55,6 +65,22 @@ const create_context = async (token, export_path) => {
             dir_promises: {},
             block_ids_fetched: new Set(),
             subblocks_fetched: new Set(),
+        },
+    }
+}
+
+/**
+ * Create a read context object
+ * 
+ * @param {String} export_path The path to the data directory
+ * @returns {ContextRead} The context object
+ */
+const create_read_context = async (export_path) => {
+    const base_path = export_path
+
+    return {
+        static: {
+            base_path,
         },
     }
 }
@@ -166,3 +192,4 @@ exports.mark_subblock_as_fetched = mark_subblock_as_fetched
 exports.is_subblock_fetched = is_subblock_fetched
 exports.add_subblock_id_to_fetch = add_subblock_id_to_fetch
 exports.get_next_subblock_id_to_fetch = get_next_subblock_id_to_fetch
+exports.create_read_context = create_read_context
