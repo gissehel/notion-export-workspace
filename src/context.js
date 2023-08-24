@@ -23,15 +23,26 @@ const { get_time_id } = require('./utils.js');
  */
 
 /**
+ * Get the default base path for the data directory
+ * 
+ * @returns {String} The default base path for the data directory
+ * @returns {String}
+ */
+const get_base_path = () => {
+    const data_path = '../__data__'
+    const base_path = `${data_path}/${get_time_id()}`;
+    return base_path
+}
+
+/**
  * Create a context object
  * 
  * @param {String} token The Notion token
  * @returns {Context} The context object
  */
-const create_context = async (token) => {
+const create_context = async (token, export_path) => {
     const notion = new Client({ auth: token });
-    const data_path = '../__data__'
-    const base_path = `${data_path}/${get_time_id()}`;
+    const base_path = export_path || get_base_path()
     return {
         static: {
             notion,
