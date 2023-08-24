@@ -138,6 +138,9 @@ const handle_page_result = async (context, page_result) => {
     if (page_result) {
         const { id, object } = page_result;
         if (object === 'page') {
+            if (page_result.cover) {
+                handle_file(context, page_result.cover, id)
+            }
             await check_properties_length(context, page_result)
             await write_page_name(context, page_result);
             await write_page(context, page_result);
@@ -187,8 +190,42 @@ const retrieve_pages = async (context, on_result) => {
 const file_container_names = [
     'file',
     'image',
-    'cover',
 ]
+
+/**
+ * Handle downloading a file
+ * 
+ * @param {Context} context The context object
+ * @param {Object} file_struct A block structure
+ * @param {String} id The block ID to log
+ * @returns {Promise<void>} A promise that resolves when the file download has started and the structure has been updated
+ */
+
+const handle_file = async (context, file_struct, id) => {
+    console.log(`handle_file(${file_struct.id})`)
+    if (file_struct.type === 'file') {
+        console.log(`  => file[${file_struct.file.url}]`)
+        const file = file_struct.file
+        const new_file = {}
+        if (file) {
+            const { url } = file
+            if (url) {
+                const [path, filename] = url.split('?')[0].split('/secure.notion-static.com/')[1].split('/')
+                write_action(context, `Download-Start: [${id}] - File: [${filename}] (${path})`)
+                axios({ method: 'get', url, responseType: 'stream' }).then(async (response) => {
+                    const stream = await create_write_stream(context, `file/${path}`, filename)
+                    response.data.pipe(stream)
+                    finished(stream).then(() => {
+                        write_action(context, `Download-Stop : [${id}] - File: [${filename}] (${path}) downloaded`)
+                    })
+                })
+                
+                new_file.local_url = `${path}/${filename}`
+                file_struct.file = new_file
+            }
+        }
+    }
+}
 
 /**
  * Resolve external URLs
@@ -200,29 +237,7 @@ const file_container_names = [
 const handle_block_external_url = async (context, block_struct) => {
     console.log(`handle_block_external_url(${block_struct.id})})`)
     if (file_container_names.includes(block_struct.type)) {
-        console.log(`  => ${block_struct.type}`)
-        if (block_struct[block_struct.type].type === 'file') {
-            console.log(`    => file[${block_struct[block_struct.type].file.url}]`)
-            const file = block_struct[block_struct.type].file
-            const new_file = {}
-            if (file) {
-                const { url } = file
-                if (url) {
-                    const [path, filename] = url.split('?')[0].split('/secure.notion-static.com/')[1].split('/')
-                    write_action(context, `Download-Start: [${block_struct.id}] - File: [${filename}] (${path})`)
-                    axios({ method: 'get', url, responseType: 'stream' }).then(async (response) => {
-                        const stream = await create_write_stream(context, `file/${path}`, filename)
-                        response.data.pipe(stream)
-                        finished(stream).then(() => {
-                            write_action(context, `Download-Stop : [${block_struct.id}] - File: [${filename}] (${path}) downloaded`)
-                        })
-                    })
-
-                    new_file.local_url = `${path}/${filename}`
-                    block_struct[block_struct.type].file = new_file
-                }
-            }
-        }
+        handle_file(context, block_struct[block_struct.type], block_struct.id)
     }
     return block_struct
 }
