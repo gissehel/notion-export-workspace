@@ -180,6 +180,17 @@ const retrieve_pages = async (context, on_result) => {
 }
 
 /**
+ * List of file container names
+ * 
+ * @type {String[]}
+ */
+const file_container_names = [
+    'file',
+    'image',
+    'cover',
+]
+
+/**
  * Resolve external URLs
  * 
  * @param {Context} context The context object
@@ -188,7 +199,7 @@ const retrieve_pages = async (context, on_result) => {
  */
 const handle_block_external_url = async (context, block_struct) => {
     console.log(`handle_block_external_url(${block_struct.id})})`)
-    if (block_struct.type === 'image' || block_struct.type === 'file') {
+    if (file_container_names.includes(block_struct.type)) {
         console.log(`  => ${block_struct.type}`)
         if (block_struct[block_struct.type].type === 'file') {
             console.log(`    => file[${block_struct[block_struct.type].file.url}]`)
@@ -199,7 +210,7 @@ const handle_block_external_url = async (context, block_struct) => {
                 if (url) {
                     const [path, filename] = url.split('?')[0].split('/secure.notion-static.com/')[1].split('/')
                     write_action(context, `Download-Start: [${block_struct.id}] - File: [${filename}] (${path})`)
-                    axios({method:'get', url, responseType:'stream'}).then(async (response) => {
+                    axios({ method: 'get', url, responseType: 'stream' }).then(async (response) => {
                         const stream = await create_write_stream(context, `file/${path}`, filename)
                         response.data.pipe(stream)
                         finished(stream).then(() => {
