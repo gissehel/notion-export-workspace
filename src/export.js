@@ -25,7 +25,7 @@ const export_notion_workspace = async (token, export_path) => {
  * @param {String} page_id The page ID
  * @returns {Promise} A promise that resolves when the page is exported
  */
-const export_pages = async (token, page_ids) => {
+const export_pages = async (token, export_path, page_ids) => {
     const context = await create_context(token, export_path)
 
     for (const page_id of page_ids) {
