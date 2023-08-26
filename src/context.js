@@ -38,7 +38,8 @@ const get_base_path = () => {
  * Create a context object
  * 
  * @param {String} token The Notion token
- * @returns {Context} The context object
+ * @param {String} export_path? The path to the data directory (if undefined, a default path is used)
+ * @returns {Promise<Context>} The context object
  */
 const create_context = async (token, export_path) => {
     const notion = new Client({ auth: token });

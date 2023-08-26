@@ -6,6 +6,7 @@
  * @typedef {import('./notion').PropertyResponse} PropertyResponse
  * @typedef {import('./notion').PageObjectResponse} PageObjectResponse
  * @typedef {import('./notion').BlockObjectResponse} BlockObjectResponse
+ * @typedef {import('./notion').DatabaseObjectResponse} DatabaseObjectResponse
  */
 
 const { write_json, create_write_stream } = require('./fileaccess')
@@ -150,6 +151,20 @@ const handle_page_result = async (context, page_result) => {
 }
 
 /**
+ * Handle a database result
+ * 
+ * @param {Context} context The context object
+ * @param {DatabaseObjectResponse} database_result The database result
+ * @returns {Promise<void>} A promise that resolves when the database result is handled
+ */
+
+const handle_database_result = async (context, database_result) => {
+    if (database_result) {
+        await write_json(context, `databases`, `${database_result.id}.json`, database_result)
+    }
+}
+
+/**
  * Explicitly get a page by ID
  * 
  * @param {Context} context The context object
@@ -181,6 +196,25 @@ const retrieve_pages = async (context, on_result) => {
     const get_all_pages = get_all_pages_getter(context)
     await retrieve_paginated_cursor_calls(context, get_all_pages, search_properties, `pages`, null, on_result)
 }
+
+/**
+ * Retrieve all databases
+ * 
+ * @param {Context} context The context object
+ * @param {(context: Context, result: DatabaseObjectResponse) => void} on_result The function to call on each result
+ */
+const retrieve_databases = async (context, on_result) => {
+    search_properties = {
+        filter: {
+            value: 'database',
+            property: 'object',
+        },
+    }
+
+    const get_all_databases = get_all_pages_getter(context)
+    await retrieve_paginated_cursor_calls(context, get_all_databases, search_properties, `databases`, null, on_result)
+}
+
 
 /**
  * List of file container names
@@ -222,7 +256,7 @@ const handle_file = async (context, file_struct, id) => {
                         write_action(context, `Download-Stop : [${id}] - File: [${filename}] (${path}) downloaded`)
                     })
                 })
-                
+
                 new_file.local_url = `${path}/${filename}`
                 file_struct.file = new_file
             }
@@ -371,6 +405,8 @@ exports.get_page_property = get_page_property
 exports.check_properties_length = check_properties_length
 exports.write_page_name = write_page_name
 exports.handle_page_result = handle_page_result
+exports.handle_database_result = handle_database_result
 exports.get_page = get_page
 exports.retrieve_pages = retrieve_pages
 exports.get_blocks = get_blocks
+exports.retrieve_databases = retrieve_databases

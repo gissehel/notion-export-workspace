@@ -1,6 +1,7 @@
 const { program } = require('commander');
 const { export_notion_workspace } = require('./export')
 const { export_pages } = require('./export')
+const { export_all_databases } = require('./export')
 
 program
     .version('0.0.1')
@@ -28,6 +29,15 @@ program
     .option('-i, --ids <ids>', 'Page IDs', collect_list, [])
     .action((options) => {
         export_pages(options.token, options.path, options.ids)
+    })
+
+program
+    .command('export_databases')
+    .description('Export Notion databases')
+    .option('-p, --path <path>', 'Export path', process.env.NOTION_EXPORT_PATH)
+    .option('-t, --token <token>', 'Notion token', process.env.NOTION_TOKEN)
+    .action((options) => {
+        export_all_databases(options.token, options.path)
     })
 
 program.parse(process.argv)

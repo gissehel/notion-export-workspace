@@ -16,6 +16,10 @@
  * @typedef {import('./context').Context} Context
  */
 
+/**
+ * @typedef {import('@notionhq/client/build/src/api-endpoints').DatabaseObjectResponse} DatabaseObjectResponse
+ */
+
 const { get_notion } = require('./context')
 const { write_json, write_action } = require('./fileaccess')
 const { get_fine_time_id } = require('./utils')
