@@ -17,4 +17,3 @@ const get_fine_time_id = () => {
 
 exports.get_time_id = get_time_id;
 exports.get_fine_time_id = get_fine_time_id;
-    
