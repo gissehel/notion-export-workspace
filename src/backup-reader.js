@@ -20,6 +20,7 @@
  */
 const { read_json } = require('./fileaccess')
 const { ls_json } = require('./fileaccess')
+const { create_read_context } = require('./context')
 
 /**
  * List the page_ids of the pages in the backup
@@ -355,6 +356,25 @@ const export_page_as_markdown = async (context, page_and_content) => {
     return lines.join('\n')
 }
 
+/**
+ * Read a Notion workspace
+ * 
+ * @param {String} export_path The path to the data directory
+ * @param {String} block_id The block ID to read
+ * @returns {Promise<void>} A promise that resolves when the workspace is read
+ */
+const read_backup = async (export_path, block_id) => {
+    const context = await create_read_context(export_path)
+
+    const block_ids = await page_ls(context)
+    if (block_ids.indexOf(block_id) > -1) {
+        const page_and_content = await page_read_recursive(context, block_id)
+        JSON.stringify(page_and_content, null, 4).split('\n').forEach((line) => console.log(line))
+        const result = await export_page_as_markdown(context, page_and_content)
+        console.log(result)
+    }
+}
+
 exports.page_ls = page_ls
 exports.page_read = page_read
 exports.block_ls = block_ls
@@ -362,3 +382,4 @@ exports.read_block = read_block
 exports.recursive_block_read = recursive_block_read
 exports.page_read_recursive = page_read_recursive
 exports.export_page_as_markdown = export_page_as_markdown
+exports.read_backup = read_backup
