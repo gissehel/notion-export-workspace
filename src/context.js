@@ -73,7 +73,7 @@ const create_context = async (token, export_path) => {
  * Create a read context object
  * 
  * @param {String} export_path The path to the data directory
- * @returns {ContextRead} The context object
+ * @returns {Promise<ContextRead>} The context object
  */
 const create_read_context = async (export_path) => {
     const base_path = export_path

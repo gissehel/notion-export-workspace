@@ -10,7 +10,7 @@
  * @property {RecursiveBlock[]} children The children of the block
  */
 /**
- * @typedef {Object.<String, Object>} PageProperties The properties of a page
+ * @typedef {{ [name: String]: Object }} PageProperties The properties of a page
  */
 /**
  * @typedef {Object} PageAndContent The page and its content
@@ -26,9 +26,21 @@ const { create_read_context } = require('./context')
  * List the page_ids of the pages in the backup
  * 
  * @param {Context} context The context object
+ * @returns {Promise<String[]>} A promise that resolves to the page IDs
  */
 const page_ls = async (context) => {
     const files = await ls_json(context, 'pages')
+    return files.map((file) => file.replace('.json', ''))
+}
+
+/**
+ * List the database_ids of the databases in the backup
+ * 
+ * @param {Context} context The context object
+ * @returns {Promise<String[]>} A promise that resolves to the database IDs
+ */
+const database_ls = async (context) => {
+    const files = await ls_json(context, 'databases')
     return files.map((file) => file.replace('.json', ''))
 }
 
@@ -105,7 +117,7 @@ const get_property_value = async (context, property) => {
         case 'date':
             return property.date.start
         case 'formula':
-            return property.formula.string
+            return property.formula[property.formula.type]
         case 'relation':
             return property.relation.map((relation) => relation.id)
         case 'rollup':
@@ -140,10 +152,13 @@ const get_property_value = async (context, property) => {
  * 
  * @param {Context} context The context object
  * @param {String} page_id The page ID to read the properties of
+ * @param {Object} page? The page to read the properties of
  * @returns {Promise<PageProperties>} A promise that resolves to the properties of the page
  */
-const read_properties = async (context, page_id) => {
-    const page = await read_json(context, 'pages', `${page_id}.json`)
+const read_properties = async (context, page_id, page) => {
+    if (!page) {
+        page = page_read(context, page_id)
+    }
     const { properties } = page
     const result = {}
     for (let property_name in properties) {
@@ -165,7 +180,7 @@ const read_properties = async (context, page_id) => {
 const page_read_recursive = async (context, page_id) => {
     const page = await page_read(context, page_id)
     const content = await recursive_block_read(context, page_id)
-    const properties = await read_properties(context, page_id)
+    const properties = await read_properties(context, page_id, page)
     return {
         page,
         content,
@@ -376,6 +391,7 @@ const read_backup = async (export_path, block_id) => {
 }
 
 exports.page_ls = page_ls
+exports.database_ls = database_ls
 exports.page_read = page_read
 exports.block_ls = block_ls
 exports.read_block = read_block
@@ -383,3 +399,5 @@ exports.recursive_block_read = recursive_block_read
 exports.page_read_recursive = page_read_recursive
 exports.export_page_as_markdown = export_page_as_markdown
 exports.read_backup = read_backup
+exports.read_properties = read_properties
+exports.get_page_title = get_page_title
