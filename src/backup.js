@@ -247,7 +247,8 @@ const handle_file = async (context, file_struct, id) => {
         if (file) {
             const { url } = file
             if (url) {
-                const [path, filename] = url.split('?')[0].split('/secure.notion-static.com/')[1].split('/')
+                const path_parts = url.split('?')[0].split('/')
+                const [path, filename] = path_parts.slice(path_parts.length-2)
                 write_action(context, `Download-Start: [${id}] - File: [${filename}] (${path})`)
                 axios({ method: 'get', url, responseType: 'stream' }).then(async (response) => {
                     const stream = await create_write_stream(context, `file/${path}`, filename)
