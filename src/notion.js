@@ -22,7 +22,7 @@
 
 const { get_notion } = require('./context')
 const { write_action } = require('./repo-writer')
-const { write_debug } = require('./repo-writer')
+// const { write_debug } = require('./repo-writer')
 const { delay } = require('./utils')
 
 /**
@@ -272,21 +272,33 @@ const get_title = (page_struct) => {
  * @returns {Promise<T>} A promise that resolves when the call is made
  */
 const perform_call = async (context, call, call_properties, logid) => {
-    console.log(`Calling "${logid}" with ${JSON.stringify(call_properties)}`)
+    const log_details = `${JSON.stringify(call_properties)}`
+    console.log(`Calling "${logid}" with ${log_details}`)
     let result = null
     let cont = 10
+    let has_error = false
     while (cont > 0) {
         try {
-            result = await call(context, {
+            result = await call({
                 ...call_properties,
             })
             cont = 0
+            if (has_error) {
+                write_action(context, `Recovered:  ${logid}/${log_details}`)
+                has_error = true
+            }
         } catch (e) {
-            write_action(context, `Error:  ${logid}/${JSON.stringify(call_properties)} ${e.message}`)
+            write_action(context, `Error:  ${logid}/${log_details} ${e.message} (retries: ${cont})`)
             cont -= 1
+            has_error = true
             await delay(5000)
         }
     }
+    if (has_error) {
+        write_action(context, `Failed:  ${logid}/${log_details}`)
+    }
+    // await write_debug(context, logid+'-in', call_properties)
+    // await write_debug(context, logid+'-out', result)
     return result
 }
 
@@ -317,7 +329,7 @@ const retrieve_paginated_cursor_calls = async (context, call, call_properties, l
             ...call_properties,
             start_cursor: search_results.next_cursor,
         }
-        search_results = await perform_call(context, call, next_call_properties, logid)
+        search_results = await perform_call(context, call, next_call_properties, logid+"_next")
 
         // await write_debug(context, logid, search_results)
         if (on_call) {

@@ -86,7 +86,7 @@ const write_action = async (context, action_text) => {
  * @returns {Promise<void>} A promise that resolves when the file is written
  */
 const write_debug = async (context, logid, data) => {
-    await write_json(context, `debug`, `${logid}-${get_fine_time_id()}.json`, data)
+    await write_json(context, `debug`, `${get_fine_time_id()}-${logid}.json`, data)
 }    
 
 exports.write_page = write_page

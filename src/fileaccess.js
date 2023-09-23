@@ -159,7 +159,6 @@ exports.create_dir = create_dir
 exports.write_file = write_file
 exports.append_file = append_file
 exports.append_timed_line = append_timed_line
-exports.write_action = write_action
 exports.write_json = write_json
 exports.read_json = read_json
 exports.create_write_stream = create_write_stream
