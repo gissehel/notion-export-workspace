@@ -23,6 +23,7 @@
 const { get_notion } = require('./context')
 const { write_action } = require('./repo-writer')
 const { write_debug } = require('./repo-writer')
+const { delay } = require('./utils')
 
 /**
  * @typedef {Object} NumberPropertyResponsePart
@@ -261,6 +262,35 @@ const get_title = (page_struct) => {
 }
 
 /**
+ * Perform a call
+ * 
+ * @param {Context} context The context object
+ * @param {(context: Context, struct: Object)=>Promise<Object>} call The call to make
+ * @param {Object} call_properties The properties to pass to the call
+ * @param {String} logid The log ID
+ * @template T The type of the result
+ * @returns {Promise<T>} A promise that resolves when the call is made
+ */
+const perform_call = async (context, call, call_properties, logid) => {
+    console.log(`Calling "${logid}" with ${JSON.stringify(call_properties)}`)
+    let result = null
+    let cont = 10
+    while (cont > 0) {
+        try {
+            result = await call(context, {
+                ...call_properties,
+            })
+            cont = 0
+        } catch (e) {
+            write_action(context, `Error:  ${logid}/${JSON.stringify(call_properties)} ${e.message}`)
+            cont -= 1
+            await delay(5000)
+        }
+    }
+    return result
+}
+
+/**
  * Retrieve paginated calls
  * 
  * @param {Context} context The context object
@@ -273,16 +303,7 @@ const get_title = (page_struct) => {
  * @returns {Promise<void>} A promise that resolves when all the calls are made
  */
 const retrieve_paginated_cursor_calls = async (context, call, call_properties, logid, on_call, on_result) => {
-    console.log(`Callind "${logid}" with ${JSON.stringify(call_properties)}`)
-    let search_results = undefined
-    try {
-        search_results = await call({
-            ...call_properties,
-        })
-    } catch(e) {
-        write_action(context, `Error:  ${logid}/${JSON.stringify(call_properties)} ${e.message}`)
-        return
-    }
+    let search_results = await perform_call(context, call, call_properties, logid)
 
     // await write_debug(context, logid, search_results)
     if (on_call) {
@@ -292,20 +313,12 @@ const retrieve_paginated_cursor_calls = async (context, call, call_properties, l
         await on_result(context, result, call_properties)
     }
     while (search_results.has_more) {
-        console.log(`Callind "${logid}" with ${JSON.stringify({
+        const next_call_properties = {
             ...call_properties,
             start_cursor: search_results.next_cursor,
-        })}`)
-        try {
-            search_results = await call({
-                ...call_properties,
-                start_cursor: search_results.next_cursor,
-            })
-        } catch(e) {
-            write_action(context, `Error:  ${logid}/${JSON.stringify({ ...call_properties, start_cursor: search_results.next_cursor })} ${e.message}`)
-            return
         }
-    
+        search_results = await perform_call(context, call, next_call_properties, logid)
+
         // await write_debug(context, logid, search_results)
         if (on_call) {
             await on_call(context, search_results, call_properties)
@@ -316,11 +329,26 @@ const retrieve_paginated_cursor_calls = async (context, call, call_properties, l
     }
 }
 
+/**
+ * Retrieve a simple call
+ * 
+ * @param {Context} context The context object
+ * @param {(struct: Object)=>Promise<T>} call The call to make
+ * @param {Object} call_properties The properties to pass to the call
+ * @param {String} logid The log ID
+ * @template T The type of the result
+ * @returns {Promise<T>} A promise that resolves when the call is made
+ */
+const retrieve_simple_call = async (context, call, call_properties, logid) => {
+    return await perform_call(context, call, call_properties, logid)
+}
+
 exports.limited_property_types = limited_property_types
 exports.get_page_getter = get_page_getter
 exports.get_page_property_getter = get_page_property_getter
 exports.get_all_pages_getter = get_all_pages_getter
 exports.get_subblocks_getter = get_subblocks_getter
+exports.get_block_getter = get_block_getter
 exports.get_title = get_title
 exports.retrieve_paginated_cursor_calls = retrieve_paginated_cursor_calls
-exports.get_block_getter = get_block_getter
+exports.retrieve_simple_call = retrieve_simple_call

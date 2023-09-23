@@ -9,19 +9,21 @@
  * @typedef {import('./notion').DatabaseObjectResponse} DatabaseObjectResponse
  */
 
-const { get_page_getter, get_page_property_getter } = require('./notion')
-const { get_title } = require('./notion')
-const { retrieve_paginated_cursor_calls } = require('./notion')
-const { get_all_pages_getter } = require('./notion')
 const { limited_property_types } = require('./notion')
-const { add_block_id_to_fetch, mark_block_as_fetched, is_block_fetched, get_next_block_id_to_fetch } = require('./context')
-const { get_subblocks_getter } = require('./notion')
-const { get_block_getter } = require('./notion')
-const axios = require('axios')
-const stream = require('stream')
-const promisify = require('util').promisify
-const finished = promisify(stream.finished)
 
+const { get_page_getter } = require('./notion')
+const { get_block_getter } = require('./notion')
+const { retrieve_simple_call } = require('./notion')
+
+const { get_page_property_getter } = require('./notion')
+const { get_all_pages_getter } = require('./notion')
+const { get_subblocks_getter } = require('./notion')
+const { retrieve_paginated_cursor_calls } = require('./notion')
+
+const { get_title } = require('./notion')
+const axios = require('axios')
+
+const { add_block_id_to_fetch, mark_block_as_fetched, is_block_fetched, get_next_block_id_to_fetch } = require('./context')
 const { mark_subblock_as_fetched } = require('./context')
 const { is_subblock_fetched } = require('./context')
 const { add_subblock_id_to_fetch } = require('./context')
@@ -170,7 +172,7 @@ const handle_database_result = async (context, database_result) => {
 const get_page = async (context, page_id) => {
     const get_page_internal = get_page_getter(context)
 
-    const page_struct = await get_page_internal({ page_id });
+    const page_struct = await retrieve_simple_call(context, get_page_internal, { page_id }, 'page');
     await handle_page_result(context, page_struct);
 }
 
@@ -244,7 +246,7 @@ const handle_file = async (context, file_struct, id) => {
             const { url } = file
             if (url) {
                 const path_parts = url.split('?')[0].split('/')
-                const [path, filename] = path_parts.slice(path_parts.length-2)
+                const [path, filename] = path_parts.slice(path_parts.length - 2)
                 write_action(context, `Download-Start: [${id}] - File: [${filename}] (${path})`)
                 axios({ method: 'get', url, responseType: 'stream' }).then(async (response) => {
                     write_file_stream(context, path, filename, response.data)
@@ -339,7 +341,7 @@ const retrieve_subblocks = async (context, block_id) => {
 const get_block = async (context, block_id) => {
     const get_block_internal = get_block_getter(context)
 
-    const block_struct = await get_block_internal({ block_id });
+    const block_struct = await retrieve_simple_call(context, get_block_internal, { block_id }, 'block');
     await handle_block_external_url(context, block_struct)
     await write_block(context, block_struct);
     await write_action(context, `PageBlock: [${block_id}]`)
