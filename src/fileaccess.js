@@ -4,6 +4,7 @@
  */
 const fs = require('fs/promises');
 const fsorig = require('fs');
+const yaml = require('js-yaml');
 
 /**
  * Check if a file exists
@@ -121,6 +122,17 @@ const write_json = async (context, subpath, filename, data) => {
 }
 
 /**
+ * Write a YAML structure to a file
+ * 
+ * @param {String} filename The filename to write to
+ * @param {Object} data The YAML structure to write
+ * @returns {Promise<void>} A promise that resolves when the file is written
+ */
+const write_yaml = async (context, subpath, filename, data) => {
+    await write_file(context, subpath, filename, yaml.dump(data, {indent: 2}));
+}
+
+/**
  * Read a JSON structure from a file
  * 
  * @param {ContextRead} context The context object
@@ -140,6 +152,26 @@ const read_json = async (context, subpath, filename) => {
 }
 
 /**
+ * Read a YAML structure from a file
+ * 
+ * @param {ContextRead} context The context object
+ * @param {String} subpath The subpath to read from
+ * @param {String} filename The filename to read from
+ * @returns {Promise<Object>} A promise that resolves to the YAML structure
+ */
+
+const read_yaml = async (context, subpath, filename) => {
+    const { base_path } = context.static;
+    const dir = subpath ? `${base_path}/${subpath}` : base_path
+    const path = `${dir}/${filename}`
+    if (!(await file_exists(path))) {
+        return null
+    }
+    const data = await fs.readFile(path, 'utf8')
+    return yaml.load(data)
+}
+
+/**
  * List JSON files in a directory
  * 
  * @param {ContextRead} context The context object
@@ -154,6 +186,22 @@ const ls_json = async (context, subpath) => {
     return json_files
 }
 
+/**
+ * List YAML files in a directory
+ * 
+ * @param {ContextRead} context The context object
+ * @param {String} subpath The subpath to read from
+ * @returns {Promise<String[]>} A promise that resolves to the YAML files in the directory
+ */
+const ls_yaml = async (context, subpath) => {
+    const { base_path } = context.static;
+    const dir = subpath ? `${base_path}/${subpath}` : base_path
+    const files = await fs.readdir(dir)
+    const json_files = files.filter((file) => file.endsWith('.yaml'))
+    return json_files
+}
+
+
 
 exports.create_dir = create_dir
 exports.write_file = write_file
@@ -161,5 +209,8 @@ exports.append_file = append_file
 exports.append_timed_line = append_timed_line
 exports.write_json = write_json
 exports.read_json = read_json
+exports.write_yaml = write_yaml
+exports.read_yaml = read_yaml
 exports.create_write_stream = create_write_stream
 exports.ls_json = ls_json
+exports.ls_yaml = ls_yaml
