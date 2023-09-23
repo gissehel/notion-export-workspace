@@ -42,13 +42,23 @@ program
     })
 
 program
-    .command('read_block')
+    .command('read_page')
     .description('Read a Notion block')
     .option('-p, --path <path>', 'Export path', process.env.NOTION_EXPORT_PATH)
     .option('-b, --block <block>', 'Block ID', process.env.BLOCK_ID)
     .action((options) => {
         console.log({ options })
-        read_backup(options.path, options.block)
+        read_backup(options.path, options.block, null, (text)=>text.split('\n').forEach((line) => console.log(line)))
+    })
+
+program
+    .command('read_database_filter')
+    .description('Read a Notion database filter')
+    .option('-p, --path <path>', 'Export path', process.env.NOTION_EXPORT_PATH)
+    .option('-b, --block <block>', 'Block ID', process.env.BLOCK_ID)
+    .action((options) => {
+        console.log({ options })
+        read_database_filter(options.path, options.block)
     })
 
 program.parse(process.argv)

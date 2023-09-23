@@ -372,22 +372,41 @@ const export_page_as_markdown = async (context, page_and_content) => {
 }
 
 /**
+ * Read a page in a Notion workspace backup
+ * 
+ * @param {Context} context The context object
+ * @param {String} page_id The page ID to read
+ * @param {(page_and_content: PageAndContent)=>Promise<void>} on_page_and_content? A callback function to call when a page is read
+ * @param {(markdown: String)=>Promise<void>} on_markdown? A callback function to call when a page is exported as markdown
+ * @returns {Promise<void>} A promise that resolves when the page is read
+ */
+const read_page_and_content = async (context, page_id, on_page_and_content, on_markdown) => {
+    const block_ids = await page_ls(context)
+    if (block_ids.indexOf(page_id) > -1) {
+        const page_and_content = await page_read_recursive(context, page_id)
+        if (on_page_and_content) {
+            await on_page_and_content(page_and_content)
+        }
+        if (on_markdown) {
+            const markdown = await export_page_as_markdown(context, page_and_content)
+            await on_markdown(markdown)
+        }
+    }
+}
+
+/**
  * Read a Notion workspace
  * 
  * @param {String} export_path The path to the data directory
  * @param {String} block_id The block ID to read
+ * @param {(page_and_content: PageAndContent)=>Promise<void>} on_page_and_content? A callback function to call when a page is read
+ * @param {(markdown: String)=>Promise<void>} on_markdown? A callback function to call when a page is exported as markdown
  * @returns {Promise<void>} A promise that resolves when the workspace is read
  */
-const read_backup = async (export_path, block_id) => {
+const read_backup = async (export_path, block_id, on_page_and_content, on_markdown) => {
     const context = await create_read_context(export_path)
 
-    const block_ids = await page_ls(context)
-    if (block_ids.indexOf(block_id) > -1) {
-        const page_and_content = await page_read_recursive(context, block_id)
-        JSON.stringify(page_and_content, null, 4).split('\n').forEach((line) => console.log(line))
-        const result = await export_page_as_markdown(context, page_and_content)
-        console.log(result)
-    }
+    await read_page_and_content(context, block_id, on_page_and_content, on_markdown)
 }
 
 exports.page_ls = page_ls
@@ -398,6 +417,7 @@ exports.read_block = read_block
 exports.recursive_block_read = recursive_block_read
 exports.page_read_recursive = page_read_recursive
 exports.export_page_as_markdown = export_page_as_markdown
+exports.read_page_and_content = read_page_and_content
 exports.read_backup = read_backup
 exports.read_properties = read_properties
 exports.get_page_title = get_page_title
