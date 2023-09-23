@@ -21,8 +21,8 @@
  */
 
 const { get_notion } = require('./context')
-const { write_json, write_action } = require('./fileaccess')
-const { get_fine_time_id } = require('./utils')
+const { write_action } = require('./repo-writer')
+const { write_debug } = require('./repo-writer')
 
 /**
  * @typedef {Object} NumberPropertyResponsePart
@@ -284,7 +284,7 @@ const retrieve_paginated_cursor_calls = async (context, call, call_properties, l
         return
     }
 
-    // await write_json(context, `debug`, `${logid}-${get_fine_time_id()}.json`, search_results)
+    // await write_debug(context, logid, search_results)
     if (on_call) {
         await on_call(context, search_results, call_properties)
     }
@@ -306,7 +306,7 @@ const retrieve_paginated_cursor_calls = async (context, call, call_properties, l
             return
         }
     
-        // await write_json(context, `debug`, `${logid}-${get_fine_time_id()}.json`, search_results)
+        // await write_debug(context, logid, search_results)
         if (on_call) {
             await on_call(context, search_results, call_properties)
         }

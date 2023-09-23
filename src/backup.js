@@ -9,8 +9,6 @@
  * @typedef {import('./notion').DatabaseObjectResponse} DatabaseObjectResponse
  */
 
-const { write_json, create_write_stream } = require('./fileaccess')
-const { write_action } = require('./fileaccess')
 const { get_page_getter, get_page_property_getter } = require('./notion')
 const { get_title } = require('./notion')
 const { retrieve_paginated_cursor_calls } = require('./notion')
@@ -29,16 +27,12 @@ const { is_subblock_fetched } = require('./context')
 const { add_subblock_id_to_fetch } = require('./context')
 const { get_next_subblock_id_to_fetch } = require('./context')
 
-/**
- * Write a page to a file
- * 
- * @param {Context} context The context object
- * @param {PageObjectResponse} page_struct The page structure
- * @returns {Promise<void>} A promise that resolves when the page is written
- */
-const write_page = async (context, page_struct) => {
-    await write_json(context, `pages`, `${page_struct.id}.json`, page_struct);
-}
+const { write_page } = require('./repo-writer')
+const { write_database_result } = require('./repo-writer')
+const { write_block } = require('./repo-writer')
+const { write_subblocks } = require('./repo-writer')
+const { write_file_stream } = require('./repo-writer')
+const { write_action } = require('./repo-writer')
 
 /**
  * Get a page property
@@ -160,7 +154,9 @@ const handle_page_result = async (context, page_result) => {
 
 const handle_database_result = async (context, database_result) => {
     if (database_result) {
-        await write_json(context, `databases`, `${database_result.id}.json`, database_result)
+        await write_database_result(context, database_result)
+    } else {
+        await write_action(context, `Error, received a null database result`)
     }
 }
 
@@ -251,11 +247,9 @@ const handle_file = async (context, file_struct, id) => {
                 const [path, filename] = path_parts.slice(path_parts.length-2)
                 write_action(context, `Download-Start: [${id}] - File: [${filename}] (${path})`)
                 axios({ method: 'get', url, responseType: 'stream' }).then(async (response) => {
-                    const stream = await create_write_stream(context, `file/${path}`, filename)
-                    response.data.pipe(stream)
-                    finished(stream).then(() => {
-                        write_action(context, `Download-Stop : [${id}] - File: [${filename}] (${path}) downloaded`)
-                    })
+                    write_file_stream(context, path, filename, response.data)
+                }).then(async () => {
+                    await write_action(context, `Download-Stop : [${id}] - File: [${filename}] (${path}) downloaded`)
                 })
 
                 new_file.local_url = `${path}/${filename}`
@@ -289,7 +283,7 @@ const handle_subblock_result = async (context, subblock_struct, input) => {
     if (subblock_struct) {
         await write_action(context, `Link: [${input.block_id}] -> [${subblock_struct.id}]`)
         await handle_block_external_url(context, subblock_struct)
-        await write_json(context, `block`, `${subblock_struct.id}.json`, subblock_struct)
+        await write_block(context, subblock_struct)
         mark_block_as_fetched(context, subblock_struct.id)
         if (subblock_struct.has_children) {
             await write_action(context, `    Subblock: [${subblock_struct.id}] has children`)
@@ -297,6 +291,7 @@ const handle_subblock_result = async (context, subblock_struct, input) => {
         }
     }
 }
+
 
 
 /**
@@ -331,7 +326,7 @@ const retrieve_subblocks = async (context, block_id) => {
 
     await retrieve_paginated_cursor_calls(context, get_subblocks_internal, retrieve_subblocks_properties, `subblocks`, on_call, handle_subblock_result)
     mark_subblock_as_fetched(context, block_id)
-    await write_json(context, `subblocks`, `${block_id}.json`, subblock_ids)
+    await write_subblocks(context, block_id, subblock_ids)
 }
 
 /**
@@ -346,7 +341,7 @@ const get_block = async (context, block_id) => {
 
     const block_struct = await get_block_internal({ block_id });
     await handle_block_external_url(context, block_struct)
-    await write_json(context, `block`, `${block_id}.json`, block_struct);
+    await write_block(context, block_struct);
     await write_action(context, `PageBlock: [${block_id}]`)
     if (block_struct.has_children) {
         await write_action(context, `    PageBlock: [${block_id}] has children`)

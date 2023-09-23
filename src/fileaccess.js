@@ -105,8 +105,8 @@ const create_write_stream = async(context, subpath, filename) => {
  * @param {String} action_text The action text to write
  * @returns {Promise<void>} A promise that resolves when the action is written
  */
-const write_action = async (context, action_text) => {
-    await append_file(context, null, '__actions__', `${(new Date()).toISOString().replace('T',' ').replace('Z','')} ${action_text}\n`)
+const append_timed_line = async (context, subpath, filename, line) => {
+    await append_file(context, subpath, filename, `${(new Date()).toISOString().replace('T',' ').replace('Z','')} ${line}\n`)
 }
 
 /**
@@ -158,6 +158,7 @@ const ls_json = async (context, subpath) => {
 exports.create_dir = create_dir
 exports.write_file = write_file
 exports.append_file = append_file
+exports.append_timed_line = append_timed_line
 exports.write_action = write_action
 exports.write_json = write_json
 exports.read_json = read_json
