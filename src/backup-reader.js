@@ -426,21 +426,20 @@ const get_exact_title = async (context, page_id) => {
         return undefined
     }
     const title_substructs = Object.values(properties).filter((property) => property.type === 'title')[0].title
-    return (
+    titles[page_id] = (
         await Promise.all(
             title_substructs.map(async (title_substruct) => {
                 if (title_substruct.type === 'mention') {
                     const result = await get_exact_title(context, title_substruct.mention.page.id)
                     if (result) {
-                        titles[page_id] = result
                         return result
                     }
                 }
-                titles[page_id] = title_substruct.plain_text
                 return title_substruct.plain_text
             })
         )
     ).join('')
+    return titles[page_id]
 }
 
 exports.page_ls = page_ls
