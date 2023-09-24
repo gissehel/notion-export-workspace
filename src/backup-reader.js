@@ -432,9 +432,11 @@ const get_exact_title = async (context, page_id) => {
                 if (title_substruct.type === 'mention') {
                     const result = await get_exact_title(context, title_substruct.mention.page.id)
                     if (result) {
+                        titles[page_id] = result
                         return result
                     }
                 }
+                titles[page_id] = title_substruct.plain_text
                 return title_substruct.plain_text
             })
         )
