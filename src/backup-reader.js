@@ -418,17 +418,27 @@ const get_exact_title = async (context, page_id) => {
         return titles[page_id]
     }
     const page_struct = await page_read(context, page_id)
+    if (!page_struct) {
+        return null
+    }
     const { properties } = page_struct
     if (properties === undefined) {
         return undefined
     }
     const title_substructs = Object.values(properties).filter((property) => property.type === 'title')[0].title
-    return Promise.all(title_substructs.map(async (title_substruct) => {
-        if (title_substruct.type === 'mention') {
-            return await get_exact_title(context, title_substruct.mention.page.id)
-        }
-        return title_substruct.plain_text
-    })).join('')
+    return (
+        await Promise.all(
+            title_substructs.map(async (title_substruct) => {
+                if (title_substruct.type === 'mention') {
+                    const result = await get_exact_title(context, title_substruct.mention.page.id)
+                    if (result) {
+                        return result
+                    }
+                }
+                return title_substruct.plain_text
+            })
+        )
+    ).join('')
 }
 
 exports.page_ls = page_ls
