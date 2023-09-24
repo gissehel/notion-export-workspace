@@ -20,7 +20,7 @@
  */
 const { read_json } = require('./fileaccess')
 const { ls_json } = require('./fileaccess')
-const { create_read_context } = require('./context')
+const { create_read_context, get_titles_cache } = require('./context')
 
 /**
  * List the page_ids of the pages in the backup
@@ -262,6 +262,8 @@ const export_caption_as_markdown = async (context, caption, default_value) => {
  * @returns {Promise<String>} A promise that resolves to the title of the page
  */
 const get_page_title = async (context, page_id) => {
+    return await get_exact_title(context, page_id)
+    /*
     const block = await read_block(context, page_id)
     if (!block) {
         return null
@@ -282,6 +284,7 @@ const get_page_title = async (context, page_id) => {
         return null
     }
     return block.child_page.title
+    */
 }
 
 /**
@@ -407,6 +410,25 @@ const read_backup = async (export_path, block_id, on_page_and_content, on_markdo
     const context = await create_read_context(export_path)
 
     await read_page_and_content(context, block_id, on_page_and_content, on_markdown)
+}
+
+const get_exact_title = async (context, page_id) => {
+    const titles = get_titles_cache(context)
+    if (titles[page_id]) {
+        return titles[page_id]
+    }
+    const page_struct = await page_read(context, page_id)
+    const { properties } = page_struct
+    if (properties === undefined) {
+        return undefined
+    }
+    const title_substructs = Object.values(properties).filter((property) => property.type === 'title')[0].title
+    return Promise.all(title_substructs.map(async (title_substruct) => {
+        if (title_substruct.type === 'mention') {
+            return await get_exact_title(context, title_substruct.mention.page.id)
+        }
+        return title_substruct.plain_text
+    })).join('')
 }
 
 exports.page_ls = page_ls

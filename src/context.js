@@ -28,8 +28,14 @@ const { get_time_id } = require('./utils.js');
  */
 
 /**
+ * @typedef {Object} ContextReadDynamic
+ * @property {Object.<String, String>} titles The titles of the pages by page_id
+ */
+
+/**
  * @typedef {Object} ContextRead
  * @property {ContextReadStatic} static The static context
+ * @property {ContextReadDynamic} dynamic The dynamic context
  */
 
 /**
@@ -82,8 +88,19 @@ const create_read_context = async (export_path) => {
         static: {
             base_path,
         },
+        dynamic: {
+            titles: {},
+        },
     }
 }
+
+/**
+ * Get the titles cache from the context
+ * 
+ * @param {ContextRead} context The context object
+ * @returns {Object.<String, String>} The titles cache
+ */
+const get_titles_cache = (context) => context.dynamic.titles
 
 /**
  * Mark a block as fetched
@@ -193,3 +210,4 @@ exports.is_subblock_fetched = is_subblock_fetched
 exports.add_subblock_id_to_fetch = add_subblock_id_to_fetch
 exports.get_next_subblock_id_to_fetch = get_next_subblock_id_to_fetch
 exports.create_read_context = create_read_context
+exports.get_titles_cache = get_titles_cache
