@@ -247,7 +247,7 @@ const handle_file = async (context, file_struct, id) => {
             if (url) {
                 const path_parts = url.split('?')[0].split('/')
                 const [path, filename] = path_parts.slice(path_parts.length - 2)
-                write_action(context, `Download-Start: [${id}] - File: [${filename}] (${path})`)
+                await write_action(context, `Download-Start: [${id}] - File: [${filename}] (${path})`)
                 axios({ method: 'get', url, responseType: 'stream' }).then(async (response) => {
                     write_file_stream(context, path, filename, response.data)
                 }).then(async () => {

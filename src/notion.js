@@ -284,18 +284,18 @@ const perform_call = async (context, call, call_properties, logid) => {
             })
             cont = 0
             if (has_error) {
-                write_action(context, `Recovered:  ${logid}/${log_details}`)
-                has_error = true
+                await write_action(context, `Recovered:  ${logid}/${log_details}`)
+                has_error = false
             }
         } catch (e) {
-            write_action(context, `Error:  ${logid}/${log_details} ${e.message} (retries: ${cont})`)
+            await write_action(context, `Error:  ${logid}/${log_details} ${e.message} (retries: ${cont})`)
             cont -= 1
             has_error = true
             await delay(5000)
         }
     }
     if (has_error) {
-        write_action(context, `Failed:  ${logid}/${log_details}`)
+        await write_action(context, `Failed:  ${logid}/${log_details}`)
     }
     // await write_debug(context, logid+'-in', call_properties)
     // await write_debug(context, logid+'-out', result)
