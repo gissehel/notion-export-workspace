@@ -237,7 +237,7 @@ const file_container_names = [
  */
 
 const handle_file = async (context, file_struct, id) => {
-    console.log(`handle_file(${file_struct.id})`)
+    console.log(`handle_file(${id})`)
     if (file_struct.type === 'file') {
         console.log(`  => file[${file_struct.file.url}]`)
         const file = file_struct.file
