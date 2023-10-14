@@ -24,7 +24,7 @@ program
     .option('-t, --token <token>', 'Notion token', process.env.NOTION_TOKEN)
     .option('-s, --since <instant>', 'Instant in the form YYYY-MM-DDTHH:MM:SS', null)
     .action((options) => {
-        export_notion_workspace(options.token, options.path, options.instant)
+        export_notion_workspace(options.token, options.path, options.since)
     })
 
 const collect_list = (item, value) => {
