@@ -271,7 +271,7 @@ const handle_file = async (context, file_struct, id) => {
 const handle_block_external_url = async (context, block_struct) => {
     console.log(`handle_block_external_url(${block_struct.id})})`)
     if (file_container_names.includes(block_struct.type)) {
-        handle_file(context, block_struct[block_struct.type], block_struct.id)
+        await handle_file(context, block_struct[block_struct.type], block_struct.id)
     }
     return block_struct
 }
