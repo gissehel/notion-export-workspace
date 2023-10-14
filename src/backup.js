@@ -138,6 +138,9 @@ const handle_page_result = async (context, page_result) => {
             if (page_result.cover) {
                 handle_file(context, page_result.cover, id)
             }
+            if (page_result.request_id !== undefined) {
+                delete page_result.request_id
+            }
             await check_properties_length(context, page_result)
             await write_page_name(context, page_result);
             await write_page(context, page_result);
@@ -270,6 +273,9 @@ const handle_file = async (context, file_struct, id) => {
  */
 const handle_block_external_url = async (context, block_struct) => {
     console.log(`handle_block_external_url(${block_struct.id})})`)
+    if (block_struct.request_id !== undefined) {
+        delete block_struct.request_id
+    }
     if (file_container_names.includes(block_struct.type)) {
         await handle_file(context, block_struct[block_struct.type], block_struct.id)
     }
