@@ -314,17 +314,24 @@ const perform_call = async (context, call, call_properties, logid) => {
  * @template T The type of the result
  * @returns {Promise<void>} A promise that resolves when all the calls are made
  */
-const retrieve_paginated_cursor_calls = async (context, call, call_properties, logid, on_call, on_result) => {
+const retrieve_paginated_cursor_calls = async (context, call, call_properties, logid, on_call, on_result, on_filter_results) => {
     let search_results = await perform_call(context, call, call_properties, logid)
+
+    let should_cont = true
 
     // await write_debug(context, logid, search_results)
     if (on_call) {
         await on_call(context, search_results, call_properties)
     }
     for (const result of search_results.results) {
-        await on_result(context, result, call_properties)
+        if (on_filter_results) {
+            should_cont = await on_filter_results(context, result)
+        }
+        if (should_cont) {
+            await on_result(context, result, call_properties)
+        }
     }
-    while (search_results.has_more) {
+    while (search_results.has_more && should_cont) {
         const next_call_properties = {
             ...call_properties,
             start_cursor: search_results.next_cursor,
@@ -336,7 +343,12 @@ const retrieve_paginated_cursor_calls = async (context, call, call_properties, l
             await on_call(context, search_results, call_properties)
         }
         for (const result of search_results.results) {
-            await on_result(context, result, call_properties)
+            if (on_filter_results) {
+                should_cont = await on_filter_results(context, result)
+            }
+            if (should_cont) {
+                await on_result(context, result, call_properties)
+            }
         }
     }
 }

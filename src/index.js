@@ -17,6 +17,16 @@ program
         export_notion_workspace(options.token, options.path)
     })
 
+program
+    .command('export_diff')
+    .description('Export a diff Notion workspace')
+    .option('-p, --path <path>', 'Export path', process.env.NOTION_EXPORT_PATH)
+    .option('-t, --token <token>', 'Notion token', process.env.NOTION_TOKEN)
+    .option('-s, --since <instant>', 'Instant in the form YYYY-MM-DDTHH:MM:SS', null)
+    .action((options) => {
+        export_notion_workspace(options.token, options.path, options.instant)
+    })
+
 const collect_list = (item, value) => {
     value.push(item)
     return value

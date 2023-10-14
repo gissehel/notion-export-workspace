@@ -12,10 +12,10 @@ const { get_blocks } = require('./backup')
  * @param {String} token The Notion token
  * @param {String} export_path The path to the data directory
  */
-const export_notion_workspace = async (token, export_path) => {
+const export_notion_workspace = async (token, export_path, instant) => {
     const context = await create_context(token, export_path)
 
-    await retrieve_pages(context, handle_page_result)
+    await retrieve_pages(context, handle_page_result, instant)
     await retrieve_databases(context, handle_database_result)
     await get_blocks(context)
 }

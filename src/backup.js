@@ -186,16 +186,17 @@ const get_page = async (context, page_id) => {
  * @param {(context: Context, result: PageObjectResponse) => void} on_result The function to call on each result
  * @returns {Promise<void>} A promise that resolves when all the pages are retrieved
  */
-const retrieve_pages = async (context, on_result) => {
+const retrieve_pages = async (context, on_result, instant) => {
     search_properties = {
         filter: {
             value: 'page',
             property: 'object',
         },
     }
+    const on_filter_results = instant ? async (context, result) => result?.last_edited_time >= instant : null
 
     const get_all_pages = get_all_pages_getter(context)
-    await retrieve_paginated_cursor_calls(context, get_all_pages, search_properties, `pages`, null, on_result)
+    await retrieve_paginated_cursor_calls(context, get_all_pages, search_properties, `pages`, null, on_result, on_filter_results)
 }
 
 /**
